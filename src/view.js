@@ -2,6 +2,7 @@ import onChange from 'on-change';
 import * as yup from 'yup';
 import i18n from 'i18next';
 import axios from 'axios';
+import { renderStatus, renderFeedsAndPosts } from './renders.js';
 import ru from './locales/ru.js';
 
 const checkValid = (url, links) => {
@@ -15,7 +16,7 @@ const checkValid = (url, links) => {
 
 const fetchRSS = (url) => {
   const parser = new DOMParser();
-  return axios.get(`https://allorigins.hexlet.app/get?url=${encodeURIComponent(url)}`)
+  return axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
     .then((response) => parser.parseFromString(response.data.contents, 'text/xml'))
     .then((xml) => {
       const rss = xml.querySelector('rss');
@@ -32,6 +33,7 @@ const fetchRSS = (url) => {
       const [feedDescription, ...postsDescriptions] = descriptions;
 
       const data = {};
+      data.link = url;
       data.feed = [feedName, feedDescription, feedLink];
       data.posts = postsNames
         .map((title, index) => [title, postsDescriptions[index], postLinks[index]]);
@@ -40,83 +42,8 @@ const fetchRSS = (url) => {
     });
 };
 
-let uniqId = 0;
-
-const renderFeedsAndPosts = (path, value) => {
-  const feedContainer = document.querySelector('.feeds');
-  const postsContrainer = document.querySelector('.posts');
-  if (path === 'feed') {
-    const feedCardDiv = document.createElement('div');
-    feedCardDiv.classList.add('card', 'border-0');
-
-    const feedBodyDiv = document.createElement('div');
-    feedBodyDiv.classList.add('card-body');
-    feedCardDiv.prepend(feedBodyDiv);
-
-    const feedHeader = document.createElement('h2');
-    feedHeader.classList.add('card-title', 'h4');
-    feedHeader.textContent = i18n.t('feedTitle');
-    feedBodyDiv.prepend(feedHeader);
-
-    const listUlEl = document.createElement('ul');
-    listUlEl.classList.add('list-group', 'border-0', 'rounded-0');
-    feedBodyDiv.append(listUlEl);
-
-    if (feedContainer.firstChild) {
-      feedContainer.removeChild(feedContainer.firstChild);
-    }
-
-    value.forEach((feed) => {
-      const [feedtitle, feedDescribe] = feed;
-      const listLiclassEl = document.createElement('li');
-      listLiclassEl.classList.add('list-group-item', 'border-0', 'border-end-0');
-      listLiclassEl.innerHTML = `<h3 class='h6 m-0'>${feedtitle}</h3><p class='m-0 small text-black-50'>${feedDescribe}</p>`;
-      listUlEl.prepend(listLiclassEl);
-    });
-    feedContainer.prepend(feedCardDiv);
-  }
-  if (path === 'posts') {
-    if (postsContrainer.firstChild) {
-      postsContrainer.removeChild(postsContrainer.firstChild);
-    }
-    const cardDivPost = document.createElement('div');
-    cardDivPost.classList.add('card', 'border-0');
-
-    const cardBodyDivPost = document.createElement('div');
-    cardBodyDivPost.classList.add('card-body');
-    cardDivPost.prepend(cardBodyDivPost);
-
-    const feedHeaderPost = document.createElement('h2');
-    feedHeaderPost.classList.add('card-title', 'h4');
-    feedHeaderPost.textContent = i18n.t('postsTitle');
-    cardBodyDivPost.prepend(feedHeaderPost);
-
-    const listUlElPost = document.createElement('ul');
-    listUlElPost.classList.add('list-group', 'border-0', 'rounded-0');
-    cardBodyDivPost.append(listUlElPost);
-
-    value.forEach((post) => {
-      uniqId += 1;
-      const [postTitle, , postLink] = post;
-      const postLiEl = document.createElement('li');
-      postLiEl.classList.add(
-        'list-group-item',
-        'd-flex',
-        'justify-content-between',
-        'alitgn=items-start',
-        'border-0',
-        'border-end-0',
-      );
-      postLiEl.innerHTML = `<a href="${postLink}" class="fw-bold" data-id="${uniqId}" target="_blank" rel="noopener noreferrer">${postTitle}</a>
-      <button type="button" class="btn btn-outline-primary btn-sm" data-id="${uniqId}" data-bs-toggle="modal" data-bs-target="#modal">${i18n.t('buttonView')}</button>`;
-      listUlElPost.append(postLiEl);
-    });
-    postsContrainer.prepend(cardDivPost);
-  }
-};
-
 const app = () => {
-  const stateOfForm = {
+  const stateApp = {
     feed: [],
     posts: [],
     links: [],
@@ -130,21 +57,7 @@ const app = () => {
     },
   });
 
-  const renderStatus = (path, value) => {
-    const feedbackEl = document.querySelector('.feedback');
-    let localePath = '';
-
-    if (path === 'errors' && value !== '') {
-      feedbackEl.classList.replace('text-success', 'text-danger');
-      localePath = `errors.${stateOfForm.errors}`;
-      feedbackEl.textContent = i18n.t(localePath);
-    } else {
-      feedbackEl.classList.replace('text-danger', 'text-success');
-      feedbackEl.textContent = i18n.t('load');
-    }
-  };
-
-  const watchedState = onChange(stateOfForm, (path, value) => {
+  const watchedState = onChange(stateApp, (path, value) => {
     if (path === 'errors') {
       renderStatus(path, value);
     } else {
@@ -152,6 +65,21 @@ const app = () => {
       renderFeedsAndPosts(path, value);
     }
   });
+
+  const updatePosts = (urls) => {
+    setTimeout(() => {
+      urls.forEach((url) => {
+        console.log(url);
+        fetchRSS(url)
+          .then((data) => {
+            const currentTitles = stateApp.posts.map((post) => post[0]);
+            const update = data.posts.filter((post) => !currentTitles.includes(post[0]));
+            watchedState.posts.unshift(...update);
+          });
+      });
+      updatePosts(urls);
+    }, 5 * 1000);
+  };
 
   const formEl = document.querySelector('.rss-form');
   formEl.addEventListener('submit', (e) => {
@@ -164,13 +92,14 @@ const app = () => {
         return formData.get('url');
       })
       .then((url) => checkValid(url, watchedState.links))
-      .then((url) => fetchRSS(url, watchedState))
-      .then((data, url) => {
-        watchedState.links.push(url);
-        const { feed, posts } = data;
+      .then((url) => fetchRSS(url))
+      .then((data) => {
+        const { feed, posts, link } = data;
         watchedState.errors = '';
         watchedState.feed.unshift(feed);
         watchedState.posts.unshift(...posts);
+        watchedState.links.push(link);
+        updatePosts(stateApp.links);
       })
       .catch((error) => {
         watchedState.errors = error.message;

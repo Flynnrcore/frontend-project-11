@@ -5,14 +5,12 @@ import axios from 'axios';
 import ru from './locales/ru.js';
 
 const checkValid = (url, links) => {
-  const RSSshchema = yup
+  const shchema = yup
     .string()
     .url('notValid')
     .notOneOf(links, 'alreadyExist');
 
-  return RSSshchema
-    .validate(url)
-    .then(() => 'load');
+  return shchema.validate(url);
 };
 
 const fetchRSS = (url) => {
@@ -20,6 +18,11 @@ const fetchRSS = (url) => {
   return axios.get(`https://allorigins.hexlet.app/get?url=${encodeURIComponent(url)}`)
     .then((response) => parser.parseFromString(response.data.contents, 'text/xml'))
     .then((xml) => {
+      const rss = xml.querySelector('rss');
+      if (!rss) {
+        throw new Error('notIncludesRSS');
+      }
+
       const titles = Array.from(xml.querySelectorAll('title')).map((item) => item.textContent);
       const descriptions = Array.from(xml.querySelectorAll('description')).map((item) => item.textContent);
       const links = Array.from(xml.querySelectorAll('link')).map((item) => item.textContent);
@@ -118,7 +121,6 @@ const app = () => {
     posts: [],
     links: [],
     errors: '',
-    status: 'unload',
   };
 
   i18n.init({
@@ -136,10 +138,9 @@ const app = () => {
       feedbackEl.classList.replace('text-success', 'text-danger');
       localePath = `errors.${stateOfForm.errors}`;
       feedbackEl.textContent = i18n.t(localePath);
-    } else if (value === 'load') {
+    } else {
       feedbackEl.classList.replace('text-danger', 'text-success');
-      localePath = `status.${stateOfForm.status}`;
-      feedbackEl.textContent = i18n.t(localePath);
+      feedbackEl.textContent = i18n.t('load');
     }
   };
 
@@ -162,16 +163,12 @@ const app = () => {
         const formData = new FormData(event.target);
         return formData.get('url');
       })
-      .then((url) => checkValid(url, watchedState.links)
-        .then((status) => {
-          watchedState.status = status;
-          watchedState.errors = '';
-          watchedState.links.push(url);
-          return url;
-        }))
+      .then((url) => checkValid(url, watchedState.links))
       .then((url) => fetchRSS(url, watchedState))
-      .then((data) => {
+      .then((data, url) => {
+        watchedState.links.push(url);
         const { feed, posts } = data;
+        watchedState.errors = '';
         watchedState.feed.unshift(feed);
         watchedState.posts.unshift(...posts);
       })

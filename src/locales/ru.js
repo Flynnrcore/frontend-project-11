@@ -6,9 +6,7 @@ export default {
       notIncludesRSS: 'Ресурс не содержит валидный RSS',
       'Network Error': 'Ошибка сети',
     },
-    status: {
-      load: 'RSS успешно загружен!',
-    },
+    load: 'RSS успешно загружен!',
     feedTitle: 'Фиды',
     postsTitle: 'Посты',
     buttonView: 'Просмотр',

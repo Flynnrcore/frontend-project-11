@@ -66,18 +66,17 @@ const app = () => {
     }
   });
 
-  const updatePosts = (urls) => {
+  const updatePosts = (url) => {
     setTimeout(() => {
-      urls.forEach((url) => {
-        console.log(url);
-        fetchRSS(url)
-          .then((data) => {
-            const currentTitles = stateApp.posts.map((post) => post[0]);
-            const update = data.posts.filter((post) => !currentTitles.includes(post[0]));
-            watchedState.posts.unshift(...update);
-          });
-      });
-      updatePosts(urls);
+      fetchRSS(url)
+        .then((data) => {
+          const currentTitles = stateApp.posts.map((post) => post[0]);
+          const update = data.posts.filter((post) => !currentTitles.includes(post[0]));
+          watchedState.posts.unshift(...update);
+        })
+        .catch((error) => {
+        });
+      updatePosts(url);
     }, 5 * 1000);
   };
 
@@ -99,7 +98,7 @@ const app = () => {
         watchedState.feed.unshift(feed);
         watchedState.posts.unshift(...posts);
         watchedState.links.push(link);
-        updatePosts(stateApp.links);
+        updatePosts(link, watchedState);
       })
       .catch((error) => {
         watchedState.errors = error.message;

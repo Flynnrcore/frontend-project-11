@@ -43,7 +43,7 @@ export const renderFeedsAndPosts = (path, value) => {
       const listLiclassEl = document.createElement('li');
       listLiclassEl.classList.add('list-group-item', 'border-0', 'border-end-0');
       listLiclassEl.innerHTML = `<h3 class='h6 m-0'>${feedtitle}</h3><p class='m-0 small text-black-50'>${feedDescribe}</p>`;
-      listUlEl.prepend(listLiclassEl);
+      listUlEl.append(listLiclassEl);
     });
     feedContainer.prepend(feedCardDiv);
   }

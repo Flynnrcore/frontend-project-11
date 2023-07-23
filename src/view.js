@@ -76,12 +76,10 @@ const viewPosts = (postsList, visitedLinks) => {
     btn.addEventListener('click', (e) => {
       const { id } = e.target.dataset;
       visitedLinks.push(id);
-
       const currentLink = document.querySelector(`a[data-id="${id}"]`);
       clickLink(currentLink);
 
-      const postArr = postsList.filter((post) => post.id === Number(id));
-      const [currentPost] = postArr;
+      const [currentPost] = postsList.filter((post) => post.id === Number(id));
       const { title, description, link } = currentPost;
       modalBtn.setAttribute('href', link);
       modalTitle.textContent = title;

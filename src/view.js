@@ -2,7 +2,12 @@ import onChange from 'on-change';
 import * as yup from 'yup';
 import i18n from 'i18next';
 import axios from 'axios';
-import { renderStatus, renderFeedsAndPosts } from './renders.js';
+import {
+  renderStatus,
+  disabledSubmitBtn,
+  renderFeeds,
+  renderPosts,
+} from './renders.js';
 import ru from './locales/ru.js';
 
 const checkValid = (url, links) => {
@@ -47,38 +52,49 @@ const modalTitle = document.querySelector('.modal-title');
 const modalBody = document.querySelector('.modal-body');
 const modalBtn = document.querySelector('.modal-footer > .full-article');
 
-const renderModal = (element, post, visitedLinks) => {
-  const link = element.querySelector('a');
-  const btn = element.querySelector('button');
-  const [postTitle, postDescribe, postLink] = post;
+const viewPosts = (postsList, visitedLinks) => {
+  const links = document.querySelectorAll('.posts a');
+  const btns = document.querySelectorAll('.posts button');
 
   const clickLink = (el) => {
     el.classList.remove('fw-bold');
     el.classList.add('fw-normal', 'link-secondary');
   };
 
-  link.addEventListener('click', (e) => {
-    clickLink(link);
-    const { id } = e.target.dataset;
-    visitedLinks.push(id);
+  links.forEach((link) => {
+    link.addEventListener('click', (e) => {
+      clickLink(link);
+      const { id } = e.target.dataset;
+      visitedLinks.push(id);
+    });
   });
 
-  btn.addEventListener('click', (e) => {
-    const { id } = e.target.dataset;
-    visitedLinks.push(id);
-    modalBtn.setAttribute('href', postLink);
-    modalTitle.textContent = postTitle;
-    modalBody.textContent = postDescribe;
+  btns.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const { id } = e.target.dataset;
+      visitedLinks.push(id);
+
+      const currentLink = document.querySelector(`a[data-id="${id}"]`);
+      clickLink(currentLink);
+
+      const postArr = postsList.filter((post) => post[3] === Number(id));
+      const [currentPost] = postArr;
+      const [postTitle, postDescribe, postLink] = currentPost;
+      modalBtn.setAttribute('href', postLink);
+      modalTitle.textContent = postTitle;
+      modalBody.textContent = postDescribe;
+    });
   });
 };
 
 const app = () => {
   const stateApp = {
-    feed: [],
+    feeds: [],
     posts: [],
     links: [],
     visitedLinks: [],
     errors: '',
+    loading: false,
   };
 
   i18n.init({
@@ -89,11 +105,24 @@ const app = () => {
   });
 
   const watchedState = onChange(stateApp, (path, value) => {
-    if (path === 'errors') {
-      renderStatus(path, value);
-    } else {
-      renderStatus(path, value);
-      renderFeedsAndPosts(path, value, renderModal, stateApp.visitedLinks);
+    switch (path) {
+      case 'errors':
+        renderStatus(path, value);
+        break;
+      case 'loading':
+        disabledSubmitBtn(value);
+        break;
+      case 'feeds':
+        renderStatus(path, value);
+        renderFeeds(value);
+        break;
+      case 'posts':
+        renderPosts(value, stateApp.visitedLinks);
+        viewPosts(stateApp.posts, stateApp.visitedLinks);
+        break;
+      default:
+        // renderStatus(path, value);
+        // renderFeedsAndPosts(path, value, renderModal, stateApp.visitedLinks);
     }
   });
 
@@ -126,6 +155,7 @@ const app = () => {
     const promise = Promise.resolve(e);
     promise
       .then((event) => {
+        watchedState.loading = true;
         const formData = new FormData(event.target);
         return formData.get('url');
       })
@@ -139,13 +169,15 @@ const app = () => {
         });
 
         watchedState.errors = '';
-        watchedState.feed.unshift(feed);
+        watchedState.feeds.unshift(feed);
         watchedState.posts.unshift(...postsWithID);
         watchedState.links.push(link);
+        watchedState.loading = false;
 
         updatePosts(link, watchedState);
       })
       .catch((error) => {
+        watchedState.loading = false;
         watchedState.errors = error.message;
       });
   });

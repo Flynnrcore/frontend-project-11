@@ -8,7 +8,7 @@ export default {
       'Network Error': 'Ошибка сети',
     },
     load: 'RSS успешно загружен!',
-    feedTitle: 'Фиды',
+    feedsTitle: 'Фиды',
     postsTitle: 'Посты',
     buttonView: 'Просмотр',
   },

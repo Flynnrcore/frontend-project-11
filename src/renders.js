@@ -65,7 +65,7 @@ export const renderPosts = (value, visitedLinks = []) => {
   const postsContainer = createContainer('posts');
   const ulEl = postsContainer.querySelector('.list-group');
   value.forEach((post) => {
-    const [postTitle, , postLink, index] = post;
+    const { title, link, id } = post;
     const liEl = document.createElement('li');
     liEl.classList.add(
       'list-group-item',
@@ -75,10 +75,10 @@ export const renderPosts = (value, visitedLinks = []) => {
       'border-0',
       'border-end-0',
     );
-    const classes = visitedLinks.includes(String(index)) ? 'fw-normal link-secondary ' : 'fw-bold';
+    const classes = visitedLinks.includes(String(id)) ? 'fw-normal link-secondary ' : 'fw-bold';
 
-    liEl.innerHTML = `<a href="${postLink}" class="${classes}" data-id="${index}" target="_blank" rel="noopener noreferrer">${postTitle}</a>
-    <button type="button" class="btn btn-outline-primary btn-sm" data-id="${index}" data-bs-toggle="modal" data-bs-target="#exampleModal">${i18n.t('buttonView')}</button>`;
+    liEl.innerHTML = `<a href="${link}" class="${classes}" data-id="${id}" target="_blank" rel="noopener noreferrer">${title}</a>
+    <button type="button" class="btn btn-outline-primary btn-sm" data-id="${id}" data-bs-toggle="modal" data-bs-target="#exampleModal">${i18n.t('buttonView')}</button>`;
     ulEl.append(liEl);
   });
 };

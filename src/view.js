@@ -41,8 +41,11 @@ const fetchRSS = (url) => {
       const data = {};
       data.link = url;
       data.feed = [feedName, feedDescription, feedLink];
-      data.posts = postsNames
-        .map((title, index) => [title, postsDescriptions[index], postLinks[index]]);
+      data.posts = postsNames.map((title, index) => ({
+        title,
+        description: postsDescriptions[index],
+        link: postLinks[index],
+      }));
 
       return data;
     });
@@ -77,12 +80,12 @@ const viewPosts = (postsList, visitedLinks) => {
       const currentLink = document.querySelector(`a[data-id="${id}"]`);
       clickLink(currentLink);
 
-      const postArr = postsList.filter((post) => post[3] === Number(id));
+      const postArr = postsList.filter((post) => post.id === Number(id));
       const [currentPost] = postArr;
-      const [postTitle, postDescribe, postLink] = currentPost;
-      modalBtn.setAttribute('href', postLink);
-      modalTitle.textContent = postTitle;
-      modalBody.textContent = postDescribe;
+      const { title, description, link } = currentPost;
+      modalBtn.setAttribute('href', link);
+      modalTitle.textContent = title;
+      modalBody.textContent = description;
     });
   });
 };
@@ -120,9 +123,10 @@ const app = () => {
         renderPosts(value, stateApp.visitedLinks);
         viewPosts(stateApp.posts, stateApp.visitedLinks);
         break;
+      case 'links':
+        break;
       default:
-        // renderStatus(path, value);
-        // renderFeedsAndPosts(path, value, renderModal, stateApp.visitedLinks);
+        throw new Error(`${i18n.t('unknowError')}: ${value}`);
     }
   });
 
@@ -132,12 +136,12 @@ const app = () => {
     setTimeout(() => {
       fetchRSS(url)
         .then((data) => {
-          const currentTitles = stateApp.posts.map((post) => post[0]);
+          const currentTitles = stateApp.posts.map((post) => post.title);
           const update = data.posts
-            .filter((post) => !currentTitles.includes(post[0]))
+            .filter((post) => !currentTitles.includes(post.title))
             .map((post) => {
               uniqueID += 1;
-              return [...post, uniqueID];
+              return { ...post, id: uniqueID };
             });
           watchedState.posts.unshift(...update);
         })
@@ -165,7 +169,7 @@ const app = () => {
         const { feed, posts, link } = data;
         const postsWithID = posts.map((post) => {
           uniqueID += 1;
-          return [...post, uniqueID];
+          return { ...post, id: uniqueID };
         });
 
         watchedState.errors = '';
@@ -175,6 +179,7 @@ const app = () => {
         watchedState.loading = false;
 
         updatePosts(link, watchedState);
+        formEl.reset();
       })
       .catch((error) => {
         watchedState.loading = false;

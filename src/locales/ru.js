@@ -6,6 +6,7 @@ export default {
       notValid: 'Ссылка должна быть валидным URL',
       notIncludesRSS: 'Ресурс не содержит валидный RSS',
       'Network Error': 'Ошибка сети',
+      unknowError: 'Неизвестная ошибка',
     },
     load: 'RSS успешно загружен!',
     feedsTitle: 'Фиды',

@@ -8,6 +8,7 @@ import ru from './locales/ru.js';
 const checkValid = (url, links) => {
   const shchema = yup
     .string()
+    .required('notEmpty')
     .url('notValid')
     .notOneOf(links, 'alreadyExist');
 
@@ -42,11 +43,41 @@ const fetchRSS = (url) => {
     });
 };
 
+const modalTitle = document.querySelector('.modal-title');
+const modalBody = document.querySelector('.modal-body');
+const modalBtn = document.querySelector('.modal-footer > .full-article');
+
+const renderModal = (element, post, visitedLinks) => {
+  const link = element.querySelector('a');
+  const btn = element.querySelector('button');
+  const [postTitle, postDescribe, postLink] = post;
+
+  const clickLink = (el) => {
+    el.classList.remove('fw-bold');
+    el.classList.add('fw-normal', 'link-secondary');
+  };
+
+  link.addEventListener('click', (e) => {
+    clickLink(link);
+    const { id } = e.target.dataset;
+    visitedLinks.push(id);
+  });
+
+  btn.addEventListener('click', (e) => {
+    const { id } = e.target.dataset;
+    visitedLinks.push(id);
+    modalBtn.setAttribute('href', postLink);
+    modalTitle.textContent = postTitle;
+    modalBody.textContent = postDescribe;
+  });
+};
+
 const app = () => {
   const stateApp = {
     feed: [],
     posts: [],
     links: [],
+    visitedLinks: [],
     errors: '',
   };
 
@@ -62,19 +93,27 @@ const app = () => {
       renderStatus(path, value);
     } else {
       renderStatus(path, value);
-      renderFeedsAndPosts(path, value);
+      renderFeedsAndPosts(path, value, renderModal, stateApp.visitedLinks);
     }
   });
+
+  let uniqueID = 1;
 
   const updatePosts = (url) => {
     setTimeout(() => {
       fetchRSS(url)
         .then((data) => {
           const currentTitles = stateApp.posts.map((post) => post[0]);
-          const update = data.posts.filter((post) => !currentTitles.includes(post[0]));
+          const update = data.posts
+            .filter((post) => !currentTitles.includes(post[0]))
+            .map((post) => {
+              uniqueID += 1;
+              return [...post, uniqueID];
+            });
           watchedState.posts.unshift(...update);
         })
-        .catch((error) => {
+        // eslint-disable-next-line no-unused-vars
+        .catch((_error) => {
         });
       updatePosts(url);
     }, 5 * 1000);
@@ -94,10 +133,16 @@ const app = () => {
       .then((url) => fetchRSS(url))
       .then((data) => {
         const { feed, posts, link } = data;
+        const postsWithID = posts.map((post) => {
+          uniqueID += 1;
+          return [...post, uniqueID];
+        });
+
         watchedState.errors = '';
         watchedState.feed.unshift(feed);
-        watchedState.posts.unshift(...posts);
+        watchedState.posts.unshift(...postsWithID);
         watchedState.links.push(link);
+
         updatePosts(link, watchedState);
       })
       .catch((error) => {

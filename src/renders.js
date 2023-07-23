@@ -14,7 +14,7 @@ export const renderStatus = (path, value) => {
   }
 };
 
-export const renderFeedsAndPosts = (path, value) => {
+export const renderFeedsAndPosts = (path, value, modalFn, visitedLinks) => {
   const feedContainer = document.querySelector('.feeds');
   const postsContrainer = document.querySelector('.posts');
 
@@ -68,8 +68,8 @@ export const renderFeedsAndPosts = (path, value) => {
     PostListUlEl.classList.add('list-group', 'border-0', 'rounded-0');
     postCardDiv.append(PostListUlEl);
 
-    value.map((post, index) => {
-      const [postTitle, , postLink] = post;
+    value.map((post) => {
+      const [postTitle, , postLink, index] = post;
       const postLiEl = document.createElement('li');
       postLiEl.classList.add(
         'list-group-item',
@@ -79,8 +79,11 @@ export const renderFeedsAndPosts = (path, value) => {
         'border-0',
         'border-end-0',
       );
-      postLiEl.innerHTML = `<a href="${postLink}" class="fw-bold" data-id="${index}" target="_blank" rel="noopener noreferrer">${postTitle}</a>
-      <button type="button" class="btn btn-outline-primary btn-sm" data-id="${index}" data-bs-toggle="modal" data-bs-target="#modal">${i18n.t('buttonView')}</button>`;
+      const classes = visitedLinks.includes(String(index)) ? 'fw-normal link-secondary ' : 'fw-bold';
+
+      postLiEl.innerHTML = `<a href="${postLink}" class="${classes}" data-id="${index}" target="_blank" rel="noopener noreferrer">${postTitle}</a>
+      <button type="button" class="btn btn-outline-primary btn-sm" data-id="${index}" data-bs-toggle="modal" data-bs-target="#exampleModal">${i18n.t('buttonView')}</button>`;
+      modalFn(postLiEl, post, visitedLinks);
       return PostListUlEl.append(postLiEl);
     });
     postsContrainer.prepend(postCardDiv);

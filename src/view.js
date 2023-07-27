@@ -1,23 +1,22 @@
-import i18n from 'i18next';
-
-export const renderStatus = (path, value) => {
+const renderStatus = (path, value, i18nextLib) => {
   const feedbackEl = document.querySelector('.feedback');
   let localePath = '';
 
   if (path === 'error' && value !== null) {
     feedbackEl.classList.replace('text-success', 'text-danger');
     localePath = `error.${value}`;
-    feedbackEl.textContent = i18n.t(localePath);
+    feedbackEl.textContent = i18nextLib(localePath);
   } else if (path === 'loading' && value === true) {
     feedbackEl.textContent = '';
   } else {
     feedbackEl.classList.replace('text-danger', 'text-success');
-    feedbackEl.textContent = i18n.t('load');
+    feedbackEl.textContent = i18nextLib('load');
   }
 };
 
-export const disabledSubmitBtn = (status, form) => {
-  const input = form.elements.url;
+const formEl = document.querySelector('.rss-form');
+const disabledSubmitBtn = (status) => {
+  const input = formEl.elements.url;
   const submitBtn = document.querySelector('.rss-form button');
   if (status === true) {
     submitBtn.setAttribute('disabled', true);
@@ -28,7 +27,7 @@ export const disabledSubmitBtn = (status, form) => {
   }
 };
 
-const createContainer = (type) => {
+const createContainer = (type, i18nextLib) => {
   const container = document.querySelector(`.${type}`);
 
   if (container.firstChild) {
@@ -44,7 +43,7 @@ const createContainer = (type) => {
 
   const header = document.createElement('h2');
   header.classList.add('card-title', 'h4');
-  header.textContent = i18n.t(`${type}Title`);
+  header.textContent = i18nextLib(`${type}Title`);
   bodyDiv.prepend(header);
 
   const ulEl = document.createElement('ul');
@@ -54,8 +53,8 @@ const createContainer = (type) => {
   return container;
 };
 
-export const renderFeeds = (value) => {
-  const feedContainer = createContainer('feeds');
+const renderFeeds = (value, i18nextLib) => {
+  const feedContainer = createContainer('feeds', i18nextLib);
   const ulEl = feedContainer.querySelector('.list-group');
   value.forEach((feed) => {
     const { title, description } = feed;
@@ -66,8 +65,8 @@ export const renderFeeds = (value) => {
   });
 };
 
-export const renderPosts = (value, visitedLinks = []) => {
-  const postsContainer = createContainer('posts');
+const renderPosts = (value, i18nextLib, visitedLinks = []) => {
+  const postsContainer = createContainer('posts', i18nextLib);
   const ulEl = postsContainer.querySelector('.list-group');
   value.forEach((post) => {
     const { title, link, id } = post;
@@ -97,9 +96,69 @@ export const renderPosts = (value, visitedLinks = []) => {
     BtnEl.setAttribute('data-bs-toggle', 'modal');
     BtnEl.setAttribute('data-bs-target', '#exampleModal');
 
-    BtnEl.textContent = i18n.t('buttonView');
+    BtnEl.textContent = i18nextLib('buttonView');
 
     liEl.append(aEl, BtnEl);
     ulEl.append(liEl);
   });
 };
+
+const modalTitle = document.querySelector('.modal-title');
+const modalBody = document.querySelector('.modal-body');
+const modalBtn = document.querySelector('.modal-footer > .full-article');
+
+const viewPosts = (postsList, visitedLinks) => {
+  const posts = document.querySelector('.posts');
+
+  const clickLink = (el) => {
+    el.classList.remove('fw-bold');
+    el.classList.add('fw-normal', 'link-secondary');
+  };
+
+  posts.addEventListener('click', (event) => {
+    const eventElName = event.target.tagName;
+
+    if (eventElName === 'A') {
+      clickLink(event);
+      const { id } = event.target.dataset;
+      visitedLinks.add(id);
+    }
+    if (eventElName === 'BUTTON') {
+      const { id } = event.target.dataset;
+      visitedLinks.add(id);
+      const currentLink = document.querySelector(`a[data-id="${id}"]`);
+      clickLink(currentLink);
+
+      const [currentPost] = postsList.filter((post) => post.id === Number(id));
+      const { title, description, link } = currentPost;
+      modalBtn.setAttribute('href', link);
+      modalTitle.textContent = title;
+      modalBody.textContent = description;
+    }
+  });
+};
+
+const render = (state, path, value, i18nextLib) => {
+  const { posts, visitedLinks } = state;
+  switch (path) {
+    case 'error':
+      renderStatus(path, value, i18nextLib);
+      break;
+    case 'loading':
+      renderStatus(path, value, i18nextLib);
+      disabledSubmitBtn(value);
+      break;
+    case 'feeds':
+      renderStatus(path, value, i18nextLib);
+      renderFeeds(value, i18nextLib);
+      break;
+    case 'posts':
+      renderPosts(value, i18nextLib, visitedLinks);
+      viewPosts(posts, visitedLinks);
+      break;
+    default:
+      throw new Error(`${i18nextLib('unknowError')}: ${value}`);
+  }
+};
+
+export default render;

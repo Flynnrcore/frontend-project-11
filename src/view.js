@@ -104,10 +104,16 @@ const renderPosts = (elements, value, i18nextLib, visitedLinks = []) => {
   });
 };
 
-const viewPosts = (elements, id, statePosts) => {
-  const [currentPost] = statePosts.filter((post) => post.id === Number(...id));
+const viewPosts = (elements, setId, statePosts) => {
+  const [linkID] = [...setId];
+  const currentLink = document.querySelector(`a[data-id="${linkID}"]`);
+  currentLink.classList.remove('fw-bold');
+  currentLink.classList.add('fw-normal', 'link-secondary');
+
+  const [currentPost] = statePosts.filter((post) => post.id === Number(linkID));
   const { modal } = elements;
   const { title, description, link } = currentPost;
+
   modal.btn.setAttribute('href', link);
   modal.title.textContent = title;
   modal.body.textContent = description;

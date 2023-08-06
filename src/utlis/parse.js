@@ -1,15 +1,15 @@
 const parseRSS = (response) => {
   const parser = new DOMParser();
-  const html = parser.parseFromString(response.data.contents, 'text/xml');
+  const xml = parser.parseFromString(response.data.contents, 'text/xml');
 
-  const rss = html.querySelector('rss');
+  const rss = xml.querySelector('rss');
   if (!rss) {
     throw new Error('notIncludesRSS');
   }
 
-  const titles = Array.from(html.querySelectorAll('title')).map((item) => item.textContent);
-  const descriptions = Array.from(html.querySelectorAll('description')).map((item) => item.textContent);
-  const links = Array.from(html.querySelectorAll('link')).map((item) => item.textContent);
+  const titles = Array.from(xml.querySelectorAll('title')).map((item) => item.textContent);
+  const descriptions = Array.from(xml.querySelectorAll('description')).map((item) => item.textContent);
+  const links = Array.from(xml.querySelectorAll('link')).map((item) => item.textContent);
 
   const [feedLink, ...postLinks] = links;
   const [feedName, ...postsNames] = titles;

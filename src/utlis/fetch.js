@@ -6,7 +6,7 @@ const fetchRSS = (url) => {
   newUrl.pathname = 'get';
   newUrl.search = `disableCache=true&url=${url}`;
 
-  return axios.get(newUrl).then((xml) => parseRSS(xml));
+  return axios.get(newUrl).then((response) => parseRSS(response));
 };
 
 export default fetchRSS;

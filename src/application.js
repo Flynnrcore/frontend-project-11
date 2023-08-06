@@ -7,6 +7,24 @@ import updaterPosts from './utlis/updaterPosts.js';
 import uniqueId from './utlis/uniqueId.js';
 import render from './view.js';
 
+const elements = {
+  statusBar: document.querySelector('.feedback'),
+  form: document.querySelector('.rss-form'),
+  formSubmitBtn: document.querySelector('.rss-form button'),
+  feeds: document.querySelector('.feeds'),
+  posts: document.querySelector('.posts'),
+  modal: {
+    title: document.querySelector('.modal-title'),
+    body: document.querySelector('.modal-body'),
+    btn: document.querySelector('.modal-footer > .full-article'),
+  },
+};
+
+const clickLink = (el) => {
+  el.classList.remove('fw-bold');
+  el.classList.add('fw-normal', 'link-secondary');
+};
+
 const app = () => {
   const stateApp = {
     feeds: [],
@@ -29,11 +47,10 @@ const app = () => {
     },
   }).then((translate) => {
     const watchedState = onChange(stateApp, (path, value) => {
-      render(stateApp, path, value, translate);
+      render(elements, stateApp, path, value, translate);
     });
 
-    const formEl = document.querySelector('.rss-form');
-    formEl.addEventListener('submit', (e) => {
+    elements.form.addEventListener('submit', (e) => {
       e.preventDefault();
       const formData = new FormData(e.target);
       const url = formData.get('url');
@@ -48,13 +65,20 @@ const app = () => {
           watchedState.feeds.unshift({ ...feed, link: url });
           watchedState.posts.unshift(...postsWithId);
           watchedState.loading = false;
-
-          formEl.reset();
         })
         .catch((error) => {
           watchedState.loading = false;
           watchedState.error = error.message;
         });
+    });
+
+    elements.posts.addEventListener('click', ({ target }) => {
+      if (target.tagName === 'A' || target.tagName === 'BUTTON') {
+        const { id } = target.dataset;
+        watchedState.visitedLinks.add(id);
+        const currentLink = document.querySelector(`a[data-id="${id}"]`);
+        clickLink(currentLink);
+      }
     });
 
     updaterPosts(watchedState);

@@ -1,4 +1,7 @@
-const parseRSS = (html) => {
+const parseRSS = (response) => {
+  const parser = new DOMParser();
+  const html = parser.parseFromString(response.data.contents, 'text/xml');
+
   const rss = html.querySelector('rss');
   if (!rss) {
     throw new Error('notIncludesRSS');

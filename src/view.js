@@ -1,34 +1,35 @@
-const renderStatus = (path, value, i18nextLib) => {
-  const feedbackEl = document.querySelector('.feedback');
+const renderStatus = (elements, path, value, i18nextLib) => {
+  const { statusBar, form } = elements;
   let localePath = '';
 
   if (path === 'error' && value !== null) {
-    feedbackEl.classList.replace('text-success', 'text-danger');
+    statusBar.classList.replace('text-success', 'text-danger');
     localePath = `error.${value}`;
-    feedbackEl.textContent = i18nextLib(localePath);
+    statusBar.textContent = i18nextLib(localePath);
   } else if (path === 'loading' && value === true) {
-    feedbackEl.textContent = '';
+    statusBar.textContent = '';
   } else {
-    feedbackEl.classList.replace('text-danger', 'text-success');
-    feedbackEl.textContent = i18nextLib('load');
+    statusBar.classList.replace('text-danger', 'text-success');
+    statusBar.textContent = i18nextLib('load');
+    form.reset();
   }
 };
 
-const formEl = document.querySelector('.rss-form');
-const disabledSubmitBtn = (status) => {
-  const input = formEl.elements.url;
-  const submitBtn = document.querySelector('.rss-form button');
+const disabledSubmitBtn = (elements, status) => {
+  const { form, formSubmitBtn } = elements;
+  const input = form.elements.url;
   if (status === true) {
-    submitBtn.setAttribute('disabled', true);
+    formSubmitBtn.setAttribute('disabled', true);
     input.disabled = true;
   } else {
-    submitBtn.removeAttribute('disabled');
+    formSubmitBtn.removeAttribute('disabled');
     input.disabled = false;
   }
 };
 
-const createContainer = (type, i18nextLib) => {
-  const container = document.querySelector(`.${type}`);
+const createContainer = (elements, type, i18nextLib) => {
+  const { feeds, posts } = elements;
+  const container = type === 'feeds' ? feeds : posts;
 
   if (container.firstChild) {
     container.removeChild(container.firstChild);
@@ -53,8 +54,8 @@ const createContainer = (type, i18nextLib) => {
   return container;
 };
 
-const renderFeeds = (value, i18nextLib) => {
-  const feedContainer = createContainer('feeds', i18nextLib);
+const renderFeeds = (elements, value, i18nextLib) => {
+  const feedContainer = createContainer(elements, 'feeds', i18nextLib);
   const ulEl = feedContainer.querySelector('.list-group');
   value.forEach((feed) => {
     const { title, description } = feed;
@@ -65,8 +66,8 @@ const renderFeeds = (value, i18nextLib) => {
   });
 };
 
-const renderPosts = (value, i18nextLib, visitedLinks = []) => {
-  const postsContainer = createContainer('posts', i18nextLib);
+const renderPosts = (elements, value, i18nextLib, visitedLinks = []) => {
+  const postsContainer = createContainer(elements, 'posts', i18nextLib);
   const ulEl = postsContainer.querySelector('.list-group');
   value.forEach((post) => {
     const { title, link, id } = post;
@@ -89,72 +90,48 @@ const renderPosts = (value, i18nextLib, visitedLinks = []) => {
     aEl.setAttribute('rel', 'noopener noreferrer');
     aEl.textContent = title;
 
-    const BtnEl = document.createElement('button');
-    BtnEl.setAttribute('type', 'button');
-    BtnEl.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-    BtnEl.setAttribute('data-id', id);
-    BtnEl.setAttribute('data-bs-toggle', 'modal');
-    BtnEl.setAttribute('data-bs-target', '#exampleModal');
+    const btnEl = document.createElement('button');
+    btnEl.setAttribute('type', 'button');
+    btnEl.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    btnEl.setAttribute('data-id', id);
+    btnEl.setAttribute('data-bs-toggle', 'modal');
+    btnEl.setAttribute('data-bs-target', '#exampleModal');
 
-    BtnEl.textContent = i18nextLib('buttonView');
+    btnEl.textContent = i18nextLib('buttonView');
 
-    liEl.append(aEl, BtnEl);
+    liEl.append(aEl, btnEl);
     ulEl.append(liEl);
   });
 };
 
-const modalTitle = document.querySelector('.modal-title');
-const modalBody = document.querySelector('.modal-body');
-const modalBtn = document.querySelector('.modal-footer > .full-article');
-
-const viewPosts = (postsList, visitedLinks) => {
-  const posts = document.querySelector('.posts');
-
-  const clickLink = (el) => {
-    el.classList.remove('fw-bold');
-    el.classList.add('fw-normal', 'link-secondary');
-  };
-
-  posts.addEventListener('click', (event) => {
-    const eventElName = event.target.tagName;
-
-    if (eventElName === 'A') {
-      clickLink(event);
-      const { id } = event.target.dataset;
-      visitedLinks.add(id);
-    }
-    if (eventElName === 'BUTTON') {
-      const { id } = event.target.dataset;
-      visitedLinks.add(id);
-      const currentLink = document.querySelector(`a[data-id="${id}"]`);
-      clickLink(currentLink);
-
-      const [currentPost] = postsList.filter((post) => post.id === Number(id));
-      const { title, description, link } = currentPost;
-      modalBtn.setAttribute('href', link);
-      modalTitle.textContent = title;
-      modalBody.textContent = description;
-    }
-  });
+const viewPosts = (elements, id, statePosts) => {
+  const [currentPost] = statePosts.filter((post) => post.id === Number(...id));
+  const { modal } = elements;
+  const { title, description, link } = currentPost;
+  modal.btn.setAttribute('href', link);
+  modal.title.textContent = title;
+  modal.body.textContent = description;
 };
 
-const render = (state, path, value, i18nextLib) => {
+const render = (elements, state, path, value, i18nextLib) => {
   const { posts, visitedLinks } = state;
   switch (path) {
     case 'error':
-      renderStatus(path, value, i18nextLib);
+      renderStatus(elements, path, value, i18nextLib);
       break;
     case 'loading':
-      renderStatus(path, value, i18nextLib);
-      disabledSubmitBtn(value);
+      renderStatus(elements, path, value, i18nextLib);
+      disabledSubmitBtn(elements, value);
       break;
     case 'feeds':
-      renderStatus(path, value, i18nextLib);
-      renderFeeds(value, i18nextLib);
+      renderStatus(elements, path, value, i18nextLib);
+      renderFeeds(elements, value, i18nextLib);
       break;
     case 'posts':
-      renderPosts(value, i18nextLib, visitedLinks);
-      viewPosts(posts, visitedLinks);
+      renderPosts(elements, value, i18nextLib, visitedLinks);
+      break;
+    case 'visitedLinks':
+      viewPosts(elements, value, posts);
       break;
     default:
       throw new Error(`${i18nextLib('unknowError')}: ${value}`);

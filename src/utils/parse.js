@@ -1,6 +1,6 @@
-const parseRSS = (response) => {
+const parseRSS = (contents) => {
   const parser = new DOMParser();
-  const xml = parser.parseFromString(response.data.contents, 'text/xml');
+  const xml = parser.parseFromString(contents, 'text/xml');
 
   const rss = xml.querySelector('rss');
   if (!rss) {

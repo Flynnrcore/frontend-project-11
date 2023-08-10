@@ -1,5 +1,5 @@
 const renderStatus = (elements, path, value, i18nextLib) => {
-  const { statusBar, form } = elements;
+  const { statusBar } = elements;
   let localePath = '';
 
   if (path === 'error' && value !== null) {
@@ -11,7 +11,6 @@ const renderStatus = (elements, path, value, i18nextLib) => {
   } else {
     statusBar.classList.replace('text-danger', 'text-success');
     statusBar.textContent = i18nextLib('load');
-    form.reset();
   }
 };
 
@@ -105,12 +104,13 @@ const renderPosts = (elements, value, i18nextLib, visitedLinks = []) => {
 };
 
 const viewPosts = (elements, setId, statePosts) => {
-  const [linkID] = [...setId];
+  const arr = [...setId];
+  const linkID = arr[arr.length - 1];
   const currentLink = document.querySelector(`a[data-id="${linkID}"]`);
   currentLink.classList.remove('fw-bold');
   currentLink.classList.add('fw-normal', 'link-secondary');
 
-  const [currentPost] = statePosts.filter((post) => post.id === Number(linkID));
+  const currentPost = statePosts.find((post) => post.id === Number(linkID));
   const { modal } = elements;
   const { title, description, link } = currentPost;
 
@@ -132,6 +132,7 @@ const render = (elements, state, path, value, i18nextLib) => {
     case 'feeds':
       renderStatus(elements, path, value, i18nextLib);
       renderFeeds(elements, value, i18nextLib);
+      elements.form.reset();
       break;
     case 'posts':
       renderPosts(elements, value, i18nextLib, visitedLinks);

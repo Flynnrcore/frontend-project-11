@@ -4,7 +4,7 @@ import i18n from 'i18next';
 import ru from './locales/ru.js';
 import fetchRSS from './utils/fetch.js';
 import parseRSS from './utils/parse.js';
-import updaterPosts from './utils/updaterPosts.js';
+import updatePosts from './utils/updatePosts.js';
 import uniqueId from './utils/uniqueId.js';
 import render from './view.js';
 
@@ -54,8 +54,8 @@ const app = () => {
 
       schema(stateApp.feeds).validate(url)
         .then(() => fetchRSS(url))
-        .then(({ data }) => parseRSS(data.contents))
-        .then(({ feed, posts }) => {
+        .then(({ data }) => {
+          const { feed, posts } = parseRSS(data.contents);
           const postsWithId = posts.map((post) => ({ ...post, id: uniqueId() }));
 
           watchedState.error = null;
@@ -76,7 +76,7 @@ const app = () => {
       }
     });
 
-    updaterPosts(watchedState);
+    updatePosts(watchedState);
   });
 };
 

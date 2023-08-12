@@ -11,7 +11,7 @@ const parseRSS = (contents) => {
   const descriptions = Array.from(xml.querySelectorAll('description')).map((item) => item.textContent);
   const links = Array.from(xml.querySelectorAll('link')).map((item) => item.textContent);
 
-  const [feedLink, ...postLinks] = links;
+  const [, ...postLinks] = links;
   const [feedName, ...postsNames] = titles;
   const [feedDescription, ...postsDescriptions] = descriptions;
 
@@ -19,7 +19,6 @@ const parseRSS = (contents) => {
   data.feed = {
     title: feedName,
     description: feedDescription,
-    link: feedLink,
   };
 
   data.posts = postsNames.map((title, index) => ({

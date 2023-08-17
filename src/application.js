@@ -30,11 +30,11 @@ const app = () => {
     },
   };
 
-  const schema = (feeds) => yup
+  const schema = (links) => yup
     .string()
     .required('notEmpty')
     .url('notValid')
-    .notOneOf(feeds.map((feed) => feed.link), 'alreadyExist');
+    .notOneOf(links, 'alreadyExist');
 
   i18n.init({
     lng: 'ru',
@@ -52,7 +52,8 @@ const app = () => {
       const url = formData.get('url');
       watchedState.loading = true;
 
-      schema(stateApp.feeds).validate(url)
+      const linksList = stateApp.feeds.map((feed) => feed.link);
+      schema(linksList).validate(url)
         .then(() => fetchRSS(url))
         .then(({ data }) => {
           const { feed, posts } = parseRSS(data.contents);
